@@ -9,6 +9,7 @@ import java.util.Random;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 
 import com.sun.jna.NativeLibrary;
 
@@ -29,24 +30,25 @@ public class Main {
 	}
 
 	private static void drawFrame() {
-		JFrame frame = new JFrame("Cursor mover");
+		final JFrame frame = new JFrame("Cursor mover");
 		frame.setSize(200, 100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null);
-		
+
 		JPanel panel = new JPanel();
-		
+
 		startButton = new JButton("Start");
 		stopButton = new JButton("Stop");
-		
+
 		panel.add(startButton);
 		panel.add(stopButton);
 		frame.add(panel);
 
+		final CursorController cursorController = new CursorController();
 		startButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				moveCursor();
+				cursorController.execute();
 			}
 		});
 
@@ -60,18 +62,24 @@ public class Main {
 		frame.setVisible(true);
 	}
 
-	private static void moveCursor() {
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Random randomX = new Random(screenSize.width - 1);
-		Random randomY = new Random(screenSize.height - 1);
-		while (continueCycle) {
-			SetCursorPos(randomX.nextInt(), randomY.nextInt());
-			try {
+	private static class CursorController extends SwingWorker<Void, Void> {
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+			Random randomX = new Random();
+			Random randomY = new Random();
+			while (continueCycle) {
+				Object[] callArguments = {
+						randomX.nextInt(screenSize.width - 1),
+						randomY.nextInt(screenSize.height - 1) };
+				USER32_LIBRARY_INSTANCE.getFunction("SetCursorPos").invoke(
+						callArguments);
 				Thread.sleep(SLEEPING_TIME_MILLIS);
-			} catch (InterruptedException e) {
-				continueCycle = false;
 			}
+			return null;
 		}
+
 	}
 
 }
