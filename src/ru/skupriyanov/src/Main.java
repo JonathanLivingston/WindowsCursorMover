@@ -19,8 +19,6 @@ public class Main {
 	private static final NativeLibrary USER32_LIBRARY_INSTANCE = NativeLibrary
 			.getInstance("user32");
 
-	private static native boolean SetCursorPos(int x, int y);
-
 	private static JButton startButton;
 	private static JButton stopButton;
 	private static boolean continueCycle = true;
