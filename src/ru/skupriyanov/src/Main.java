@@ -46,6 +46,7 @@ public class Main {
 		startButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				continueCycle = true;
 				cursorController.execute();
 			}
 		});
