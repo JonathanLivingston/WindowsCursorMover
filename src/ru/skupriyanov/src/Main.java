@@ -1,27 +1,29 @@
 package ru.skupriyanov.src;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Random;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingWorker;
 
 import com.sun.jna.NativeLibrary;
 
 public class Main {
 
-	private static final int SLEEPING_TIME_MILLIS = 10000;
 	private static final NativeLibrary USER32_LIBRARY_INSTANCE = NativeLibrary
 			.getInstance("user32");
 
 	private static JButton startButton;
 	private static JButton stopButton;
-	private static boolean continueCycle = true;
+	private static JLabel stateLabel;
+	
+	private static final String STATE_RUNNING = "Running";
+	private static final String STATE_IDLE = "Idle";
+	
+	private static final int ES_CONTINUOUS = 0x80000000;
+	private static final int ES_SYSTEM_REQUIRED = 0x00000001;
 
 	public static void main(String[] args) {
 		drawFrame();
@@ -37,48 +39,32 @@ public class Main {
 
 		startButton = new JButton("Start");
 		stopButton = new JButton("Stop");
-
+		stateLabel = new JLabel(STATE_IDLE);
+		
 		panel.add(startButton);
 		panel.add(stopButton);
+		panel.add(stateLabel);
 		frame.add(panel);
 
-		final CursorController cursorController = new CursorController();
 		startButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				continueCycle = true;
-				cursorController.execute();
+				stateLabel.setText(STATE_RUNNING);
+				Object[] callArguments = {
+						ES_CONTINUOUS | ES_SYSTEM_REQUIRED };
+				USER32_LIBRARY_INSTANCE.getFunction("SetThreadExecutionState").invoke(
+						callArguments);
 			}
 		});
 
 		stopButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				continueCycle = false;
+				stateLabel.setText(STATE_IDLE);
 			}
 		});
 
 		frame.setVisible(true);
-	}
-
-	private static class CursorController extends SwingWorker<Void, Void> {
-
-		@Override
-		protected Void doInBackground() throws Exception {
-			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-			Random randomX = new Random();
-			Random randomY = new Random();
-			while (continueCycle) {
-				Object[] callArguments = {
-						randomX.nextInt(screenSize.width - 1),
-						randomY.nextInt(screenSize.height - 1) };
-				USER32_LIBRARY_INSTANCE.getFunction("SetCursorPos").invoke(
-						callArguments);
-				Thread.sleep(SLEEPING_TIME_MILLIS);
-			}
-			return null;
-		}
-
 	}
 
 }
